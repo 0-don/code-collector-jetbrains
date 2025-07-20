@@ -1,0 +1,31 @@
+package don.codecollector.actions
+
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.ui.Messages
+import com.intellij.util.ui.TextTransferable
+import don.codecollector.core.ContextCollector
+
+class CodeCollectAllAction : AnAction() {
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+
+        val collector = ContextCollector()
+        val contexts = collector.collectAllFiles(project)
+        val output = collector.formatContexts(contexts)
+
+        CopyPasteManager.getInstance().setContents(TextTransferable(output as CharSequence))
+        Messages.showInfoMessage(
+            "Copied all code context for ${contexts.size} files",
+            "Code Collector",
+        )
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabledAndVisible = e.project != null
+    }
+}

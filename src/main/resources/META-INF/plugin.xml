@@ -1,29 +1,39 @@
-<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>don.code_collector</id>
+    <id>don.codecollector</id>
+    <name>Code Collector</name>
+    <vendor>0-don</vendor>
 
-    <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>Code-Collector</name>
-
-    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
-
-    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
-  ]]></description>
+    Gather code context for AI assistance by analyzing imports and collecting related Java/Kotlin files.
+    Features:
+    - Smart Import Analysis: Follows import chains to collect all related local files
+    - Java & Kotlin Support: Handles both languages seamlessly
+    - AI-Optimized Output: Line numbers and file headers for easy AI consumption
+    ]]></description>
 
-    <!-- Product and plugin compatibility requirements.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>org.jetbrains.kotlin</depends>
 
-    <!-- Extension points defined by the plugin.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-
     </extensions>
+
+    <actions>
+        <action id="don.codecollector.gatherImports"
+                class="don.codecollector.actions.CodeCollectAction"
+                text="Code Collect"
+                description="Collect code context based on imports">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift G"/>
+        </action>
+
+        <action id="don.codecollector.collectAll"
+                class="don.codecollector.actions.CodeCollectAllAction"
+                text="Code Collect All"
+                description="Collect all project code">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after"
+                          relative-to-action="don.code_collector.gatherImports"/>
+        </action>
+    </actions>
 </idea-plugin>

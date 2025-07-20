@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.5.0"
 }
 
-group = "don.code_collector"
+group = "don.codecollector"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -21,8 +21,8 @@ dependencies {
         create("IC", "2025.1")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
 
-        // Add necessary plugin dependencies for compilation here, example:
-        // bundledPlugin("com.intellij.java")
+        bundledPlugin("com.intellij.java")
+        bundledPlugin("org.jetbrains.kotlin")
     }
 }
 
@@ -32,9 +32,10 @@ intellijPlatform {
             sinceBuild = "251"
         }
 
-        changeNotes = """
-      Initial version
-    """.trimIndent()
+        changeNotes =
+            """
+            Initial version
+            """.trimIndent()
     }
 }
 
