@@ -36,13 +36,15 @@ class JavaKotlinParser {
         PsiTreeUtil
             .findChildrenOfType(kotlinFile, KtImportDirective::class.java)
             .mapNotNull { import ->
-                import.importedFqName?.asString()?.let { fqName ->
+                // Use importedFqName instead of deprecated APIs
+                val fqName = import.importedFqName?.asString()
+                fqName?.let {
                     val document =
                         PsiDocumentManager
                             .getInstance(kotlinFile.project)
                             .getDocument(kotlinFile)
                     val line = document?.getLineNumber(import.textOffset)?.plus(1) ?: 0
-                    ImportInfo(fqName, line)
+                    ImportInfo(it, line)
                 }
             }
 }

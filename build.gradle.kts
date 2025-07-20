@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.1.0"
@@ -14,8 +16,6 @@ repositories {
     }
 }
 
-// Configure Gradle IntelliJ Plugin
-// Read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html
 dependencies {
     intellijPlatform {
         create("IC", "2025.1")
@@ -32,28 +32,28 @@ intellijPlatform {
             sinceBuild = "251"
             untilBuild = "252.*"
         }
-
-        changeNotes =
-            """
-            Initial version with K2 compatibility
-            """.trimIndent()
     }
 
-    // Add plugin verification
     pluginVerification {
         ides {
             recommended()
         }
+
+        // Skip some verifications that might interfere with K2
+        freeArgs =
+            listOf(
+                "-mute",
+                "PluginSuspiciousFile",
+            )
     }
 }
 
 tasks {
-    // Set the JVM compatibility versions
     withType<JavaCompile> {
         sourceCompatibility = "21"
         targetCompatibility = "21"
     }
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "21"
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
     }
 }

@@ -12,20 +12,14 @@
     - K2 Mode Compatible: Works with both K1 and K2 Kotlin compiler modes
     ]]></description>
 
-    <!-- K2 compatibility -->
-    <depends optional="true" config-file="kotlin-k2.xml">org.jetbrains.kotlin</depends>
-
     <!-- Core dependencies -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
     <depends>org.jetbrains.kotlin</depends>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <!-- Explicit K2 support declaration -->
-        <registryKey
-                key="kotlin.k2.only.bundled.compiler.plugins.enabled"
-                defaultValue="true"
-                description="Enable K2 support for Code Collector plugin"/>
+    <!-- Explicitly declare K2 compatibility -->
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <!-- This empty extension point declaration signals K2 compatibility -->
     </extensions>
 
     <actions>

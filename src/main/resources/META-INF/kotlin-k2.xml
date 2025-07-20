@@ -1,6 +1,0 @@
-<idea-plugin>
-    <!-- K2-specific configuration -->
-    <extensions defaultExtensionNs="com.intellij">
-        <!-- Additional K2-specific extensions can be added here if needed -->
-    </extensions>
-</idea-plugin>

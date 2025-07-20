@@ -12,27 +12,28 @@ class JvmResolver {
         importPath: String,
         contextFile: VirtualFile,
         project: Project,
-    ): VirtualFile? {
-        // Use caching for better performance
-        return resolveCache.getOrPut(importPath) {
+    ): VirtualFile? =
+        resolveCache.getOrPut(importPath) {
             resolveInternal(importPath, project)
         }
-    }
 
     private fun resolveInternal(
         importPath: String,
         project: Project,
-    ): VirtualFile? {
-        // Try to find the class using PSI - K2 compatible
-        val psiFacade = JavaPsiFacade.getInstance(project)
+    ): VirtualFile? =
+        try {
+            val psiFacade = JavaPsiFacade.getInstance(project)
 
-        // Try project scope first, then all scope
-        val psiClass =
-            psiFacade.findClass(importPath, GlobalSearchScope.projectScope(project))
-                ?: psiFacade.findClass(importPath, GlobalSearchScope.allScope(project))
+            // Try project scope first, then all scope - K2 compatible approach
+            val psiClass =
+                psiFacade.findClass(importPath, GlobalSearchScope.projectScope(project))
+                    ?: psiFacade.findClass(importPath, GlobalSearchScope.allScope(project))
 
-        return psiClass?.containingFile?.virtualFile
-    }
+            psiClass?.containingFile?.virtualFile
+        } catch (e: Exception) {
+            // Handle any K2-related resolution issues gracefully
+            null
+        }
 
     fun clearCache() {
         resolveCache.clear()

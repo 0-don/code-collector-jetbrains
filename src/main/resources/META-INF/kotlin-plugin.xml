@@ -1,0 +1,6 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <!-- Declare K2 compatibility -->
+        <compilerPluginRegistrar implementation="don.codecollector.k2.CodeCollectorK2Registrar"/>
+    </extensions>
+</idea-plugin>
