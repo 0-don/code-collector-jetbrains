@@ -30,12 +30,20 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "251"
+            untilBuild = "252.*"
         }
 
         changeNotes =
             """
-            Initial version
+            Initial version with K2 compatibility
             """.trimIndent()
+    }
+
+    // Add plugin verification
+    pluginVerification {
+        ides {
+            recommended()
+        }
     }
 }
 

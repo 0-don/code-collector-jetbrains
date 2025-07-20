@@ -14,15 +14,24 @@ class CodeCollectAllAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
 
-        val collector = ContextCollector()
-        val contexts = collector.collectAllFiles(project)
-        val output = collector.formatContexts(contexts)
+        try {
+            val collector = ContextCollector()
+            val contexts = collector.collectAllFiles(project)
+            val output = collector.formatContexts(contexts)
 
-        CopyPasteManager.getInstance().setContents(TextTransferable(output as CharSequence))
-        Messages.showInfoMessage(
-            "Copied all code context for ${contexts.size} files",
-            "Code Collector",
-        )
+            CopyPasteManager.getInstance().setContents(TextTransferable(output as CharSequence))
+            Messages.showInfoMessage(
+                "Copied all code context for ${contexts.size} files",
+                "Code Collector",
+            )
+        } catch (e: Exception) {
+            Messages.showMessageDialog(
+                project,
+                "Error collecting code context: ${e.message}",
+                "Code Collector Error",
+                Messages.getErrorIcon(),
+            )
+        }
     }
 
     override fun update(e: AnActionEvent) {

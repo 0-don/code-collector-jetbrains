@@ -27,6 +27,9 @@ class ContextCollector {
         val contexts = mutableListOf<FileContext>()
         val processed = mutableSetOf<String>()
 
+        // Clear resolver cache for fresh analysis
+        resolver.clearCache()
+
         files.filter { isSupported(it) }.forEach { file ->
             processFile(file, project, contexts, processed)
         }
@@ -43,9 +46,15 @@ class ContextCollector {
         val kotlinFiles = FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope)
 
         (javaFiles + kotlinFiles).forEach { file ->
-            val relativePath = getRelativePath(file, project)
-            val content = String(file.contentsToByteArray())
-            contexts.add(FileContext(file.path, content, relativePath))
+            if (file.isValid && file.exists()) {
+                try {
+                    val relativePath = getRelativePath(file, project)
+                    val content = String(file.contentsToByteArray())
+                    contexts.add(FileContext(file.path, content, relativePath))
+                } catch (e: Exception) {
+                    // Skip files that can't be read
+                }
+            }
         }
 
         return contexts
@@ -57,23 +66,28 @@ class ContextCollector {
         contexts: MutableList<FileContext>,
         processed: MutableSet<String>,
     ) {
-        if (file.path in processed || !isSupported(file)) return
+        if (file.path in processed || !isSupported(file) || !file.isValid || !file.exists()) return
 
         processed.add(file.path)
-        val content = String(file.contentsToByteArray())
-        val relativePath = getRelativePath(file, project)
 
-        contexts.add(FileContext(file.path, content, relativePath))
+        try {
+            val content = String(file.contentsToByteArray())
+            val relativePath = getRelativePath(file, project)
 
-        // Parse imports and resolve dependencies
-        val psiFile = PsiManager.getInstance(project).findFile(file) ?: return
-        val imports = parser.parseImports(psiFile)
+            contexts.add(FileContext(file.path, content, relativePath))
 
-        imports.forEach { importInfo ->
-            val resolvedFile = resolver.resolve(importInfo.module, file, project)
-            resolvedFile?.let { resolved ->
-                processFile(resolved, project, contexts, processed)
+            // Parse imports and resolve dependencies
+            val psiFile = PsiManager.getInstance(project).findFile(file) ?: return
+            val imports = parser.parseImports(psiFile)
+
+            imports.forEach { importInfo ->
+                val resolvedFile = resolver.resolve(importInfo.module, file, project)
+                resolvedFile?.let { resolved ->
+                    processFile(resolved, project, contexts, processed)
+                }
             }
+        } catch (e: Exception) {
+            // Skip files that cause errors
         }
     }
 
