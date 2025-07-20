@@ -17,9 +17,9 @@
     <depends>com.intellij.modules.java</depends>
     <depends>org.jetbrains.kotlin</depends>
 
-    <!-- Explicitly declare K2 compatibility -->
+    <!-- K2 compatibility declaration -->
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <!-- This empty extension point declaration signals K2 compatibility -->
+        <supportsKotlinPluginMode supportsK2="true"/>
     </extensions>
 
     <actions>

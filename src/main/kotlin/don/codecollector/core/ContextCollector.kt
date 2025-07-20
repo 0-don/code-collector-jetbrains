@@ -1,14 +1,14 @@
 package don.codecollector.core
 
-import com.intellij.ide.highlighter.JavaFileType
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.GeneratedSourcesFilter
+import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import com.intellij.psi.search.FileTypeIndex
-import com.intellij.psi.search.GlobalSearchScope
 import don.codecollector.parsers.JavaKotlinParser
 import don.codecollector.resolvers.JvmResolver
-import org.jetbrains.kotlin.idea.KotlinFileType
 
 data class FileContext(
     val path: String,
@@ -30,7 +30,7 @@ class ContextCollector {
         // Clear resolver cache for fresh analysis
         resolver.clearCache()
 
-        files.filter { isSupported(it) }.forEach { file ->
+        files.filter { isSupported(it, project) }.forEach { file ->
             processFile(file, project, contexts, processed)
         }
 
@@ -39,25 +39,45 @@ class ContextCollector {
 
     fun collectAllFiles(project: Project): List<FileContext> {
         val contexts = mutableListOf<FileContext>()
-        val scope = GlobalSearchScope.projectScope(project)
+        val moduleManager = ModuleManager.getInstance(project)
 
-        // Find all Java and Kotlin files
-        val javaFiles = FileTypeIndex.getFiles(JavaFileType.INSTANCE, scope)
-        val kotlinFiles = FileTypeIndex.getFiles(KotlinFileType.INSTANCE, scope)
+        // Process each module
+        moduleManager.modules.forEach { module ->
+            val moduleRootManager = ModuleRootManager.getInstance(module)
 
-        (javaFiles + kotlinFiles).forEach { file ->
-            if (file.isValid && file.exists()) {
-                try {
-                    val relativePath = getRelativePath(file, project)
-                    val content = String(file.contentsToByteArray())
-                    contexts.add(FileContext(file.path, content, relativePath))
-                } catch (e: Exception) {
-                    // Skip files that can't be read
-                }
+            // Get only source roots (exclude test sources)
+            moduleRootManager.getSourceRoots(false).forEach { sourceRoot ->
+                collectFromSourceRoot(sourceRoot, project, contexts)
             }
         }
 
         return contexts
+    }
+
+    private fun collectFromSourceRoot(
+        sourceRoot: VirtualFile,
+        project: Project,
+        contexts: MutableList<FileContext>,
+    ) {
+        if (!sourceRoot.isValid || !sourceRoot.exists()) return
+
+        try {
+            sourceRoot.children?.forEach { file ->
+                if (file.isDirectory) {
+                    collectFromSourceRoot(file, project, contexts)
+                } else if (isSupported(file, project)) {
+                    try {
+                        val relativePath = getRelativePath(file, project)
+                        val content = String(file.contentsToByteArray())
+                        contexts.add(FileContext(file.path, content, relativePath))
+                    } catch (e: Exception) {
+                        // Skip files that can't be read
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Skip directories that can't be accessed
+        }
     }
 
     private fun processFile(
@@ -66,7 +86,7 @@ class ContextCollector {
         contexts: MutableList<FileContext>,
         processed: MutableSet<String>,
     ) {
-        if (file.path in processed || !isSupported(file) || !file.isValid || !file.exists()) return
+        if (file.path in processed || !isSupported(file, project)) return
 
         processed.add(file.path)
 
@@ -107,7 +127,27 @@ class ContextCollector {
         return output.toString()
     }
 
-    private fun isSupported(file: VirtualFile): Boolean = file.extension in setOf("java", "kt")
+    private fun isSupported(
+        file: VirtualFile,
+        project: Project,
+    ): Boolean {
+        if (file.extension !in setOf("java", "kt")) return false
+        if (!file.isValid || !file.exists()) return false
+
+        // Use JetBrains built-in detection for generated files
+        if (GeneratedSourcesFilter.isGeneratedSourceByAnyFilter(file, project)) return false
+
+        val fileIndex = ProjectFileIndex.getInstance(project)
+
+        // Skip generated sources
+        if (fileIndex.isInGeneratedSources(file)) return false
+
+        // Ensure it's in project source (not library)
+        if (!fileIndex.isInSource(file)) return false
+        if (!fileIndex.isInProject(file)) return false
+
+        return true
+    }
 
     private fun getRelativePath(
         file: VirtualFile,

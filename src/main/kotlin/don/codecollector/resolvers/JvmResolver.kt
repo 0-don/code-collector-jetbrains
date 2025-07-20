@@ -1,6 +1,7 @@
 package don.codecollector.resolvers
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.search.GlobalSearchScope
@@ -14,26 +15,37 @@ class JvmResolver {
         project: Project,
     ): VirtualFile? =
         resolveCache.getOrPut(importPath) {
-            resolveInternal(importPath, project)
+            resolveInternal(importPath, contextFile, project)
         }
 
     private fun resolveInternal(
         importPath: String,
+        contextFile: VirtualFile,
         project: Project,
-    ): VirtualFile? =
+    ): VirtualFile? {
         try {
             val psiFacade = JavaPsiFacade.getInstance(project)
+            val fileIndex = ProjectFileIndex.getInstance(project)
 
-            // Try project scope first, then all scope - K2 compatible approach
-            val psiClass =
-                psiFacade.findClass(importPath, GlobalSearchScope.projectScope(project))
-                    ?: psiFacade.findClass(importPath, GlobalSearchScope.allScope(project))
+            // Get the module for context
+            val contextModule = fileIndex.getModuleForFile(contextFile)
 
-            psiClass?.containingFile?.virtualFile
+            // Create appropriate search scope
+            val searchScope =
+                contextModule?.let { module ->
+                    GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module)
+                } ?: GlobalSearchScope.projectScope(project)
+
+            val psiClass = psiFacade.findClass(importPath, searchScope)
+
+            return psiClass?.containingFile?.virtualFile?.let { resolvedFile ->
+                // Only return if it's a project file (not library)
+                if (fileIndex.isInProject(resolvedFile)) resolvedFile else null
+            }
         } catch (e: Exception) {
-            // Handle any K2-related resolution issues gracefully
-            null
+            return null
         }
+    }
 
     fun clearCache() {
         resolveCache.clear()
