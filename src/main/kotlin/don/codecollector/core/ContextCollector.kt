@@ -2,9 +2,9 @@ package don.codecollector.core
 
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.GeneratedSourcesFilter
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import don.codecollector.parsers.JavaKotlinParser
@@ -134,19 +134,26 @@ class ContextCollector {
         if (file.extension !in setOf("java", "kt")) return false
         if (!file.isValid || !file.exists()) return false
 
-        // Use JetBrains built-in detection for generated files
-        if (GeneratedSourcesFilter.isGeneratedSourceByAnyFilter(file, project)) return false
+        return isOfficialSourceFile(file, project)
+    }
 
+    private fun isOfficialSourceFile(
+        file: VirtualFile,
+        project: Project,
+    ): Boolean {
         val fileIndex = ProjectFileIndex.getInstance(project)
 
-        // Skip generated sources
+        if (!fileIndex.isInProject(file)) return false
+        if (!fileIndex.isInSource(file)) return false
         if (fileIndex.isInGeneratedSources(file)) return false
 
-        // Ensure it's in project source (not library)
-        if (!fileIndex.isInSource(file)) return false
-        if (!fileIndex.isInProject(file)) return false
+        val module = fileIndex.getModuleForFile(file) ?: return false
+        val moduleRootManager = ModuleRootManager.getInstance(module)
 
-        return true
+        val sourceRoots = moduleRootManager.getSourceRoots(false)
+        return sourceRoots.any { sourceRoot ->
+            VfsUtil.isAncestor(sourceRoot, file, false)
+        }
     }
 
     private fun getRelativePath(
