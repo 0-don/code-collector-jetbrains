@@ -1,0 +1,67 @@
+name: Publish Plugin
+
+on:
+    workflow_dispatch:
+    push:
+        branches: [ master ]
+
+concurrency:
+    group: ${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check-version:
+        runs-on: ubuntu-latest
+        outputs:
+            version-changed: ${{ steps.check.outputs.changed }}
+            new-version: ${{ steps.check.outputs.version }}
+        steps:
+            -   uses: actions/checkout@v4
+                with:
+                    fetch-depth: 2
+
+            -   name: Check version change
+                id: check
+                run: |
+                    OLD_VERSION=$(git show HEAD~1:build.gradle.kts | grep -o 'version = "[^"]*"' | cut -d'"' -f2)
+                    NEW_VERSION=$(grep -o 'version = "[^"]*"' build.gradle.kts | cut -d'"' -f2)
+                    if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
+                      echo "changed=true" >> $GITHUB_OUTPUT
+                      echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+                    else
+                      echo "changed=false" >> $GITHUB_OUTPUT
+                    fi
+
+    publish:
+        needs: check-version
+        if: needs.check-version.outputs.version-changed == 'true'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            -   uses: actions/checkout@v4
+
+            -   name: Setup Java
+                uses: actions/setup-java@v4
+                with:
+                    distribution: 'temurin'
+                    java-version: '21'
+
+            -   name: Setup Gradle
+                uses: gradle/actions/setup-gradle@v3
+
+            -   name: Build plugin
+                run: ./gradlew buildPlugin
+
+            -   name: Publish to JetBrains Marketplace
+                env:
+                    PUBLISH_TOKEN: ${{ secrets.JETBRAINS_TOKEN }}
+                run: ./gradlew publishPlugin
+
+            -   name: Create release
+                uses: softprops/action-gh-release@v1
+                with:
+                    tag_name: v${{ needs.check-version.outputs.new-version }}
+                    name: v${{ needs.check-version.outputs.new-version }}
+                    body: "Release v${{ needs.check-version.outputs.new-version }}"
+                    files: build/distributions/*.zip

@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     id("java")
@@ -6,8 +8,18 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.5.0"
 }
 
+// Load .env file manually
+val envFile = rootProject.file(".env")
+if (envFile.exists()) {
+    val props = Properties()
+    props.load(FileInputStream(envFile))
+    props.forEach { key, value ->
+        System.setProperty(key.toString(), value.toString())
+    }
+}
+
 group = "don.codecollector"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -34,17 +46,18 @@ intellijPlatform {
         }
     }
 
+    publishing {
+        token =
+            providers
+                .environmentVariable("JETBRAINS_TOKEN")
+                .orElse(providers.systemProperty("JETBRAINS_TOKEN"))
+                .orElse("")
+    }
+
     pluginVerification {
         ides {
             recommended()
         }
-
-        // Skip some verifications that might interfere with K2
-        freeArgs =
-            listOf(
-                "-mute",
-                "PluginSuspiciousFile",
-            )
     }
 }
 
