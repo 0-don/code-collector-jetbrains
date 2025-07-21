@@ -4,13 +4,28 @@
     <vendor>0-don</vendor>
 
     <description><![CDATA[
-   Gather code context for AI assistance by analyzing imports and collecting related Java/Kotlin files.
-   Features:
-   - Smart Import Analysis: Follows import chains to collect all related local files
-   - Java & Kotlin Support: Handles both languages seamlessly
-   - AI-Optimized Output: Line numbers and file headers for easy AI consumption
-   - K2 Mode Compatible: Works with both K1 and K2 Kotlin compiler modes
-   - Configurable Ignore Patterns: Customize which files to exclude when collecting all code
+   <html>
+       <body>
+           <p>Gather code context for AI assistance by analyzing imports and collecting related Java/Kotlin files.</p>
+
+           <h3>Features:</h3>
+           <ul>
+               <li><strong>Smart Import Analysis:</strong> Follows import chains to collect all related local files</li>
+               <li><strong>Java & Kotlin Support:</strong> Handles both languages seamlessly</li>
+               <li><strong>AI-Optimized Output:</strong> Line numbers and file headers for easy AI consumption</li>
+               <li><strong>K2 Mode Compatible:</strong> Works with both K1 and K2 Kotlin compiler modes</li>
+               <li><strong>Configurable Ignore Patterns:</strong> Customize which files to exclude when collecting all code</li>
+           </ul>
+
+           <h3>Usage:</h3>
+           <ul>
+               <li><strong>Code Collect:</strong> Right-click on file(s) or use <code>Ctrl+Shift+G</code> to collect import-based context</li>
+               <li><strong>Code Collect All:</strong> Right-click in project explorer to collect entire codebase</li>
+           </ul>
+
+           <p><em>Configure ignore patterns in Settings → Tools → Code Collector</em></p>
+       </body>
+   </html>
    ]]></description>
 
     <!-- Core dependencies -->
@@ -36,8 +51,9 @@
                 class="don.codecollector.actions.CodeCollectAction"
                 text="Code Collect"
                 description="Collect code context based on imports">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="before"
+                          relative-to-action="CutCopyPasteGroup"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="$Copy"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift G"/>
         </action>
 
