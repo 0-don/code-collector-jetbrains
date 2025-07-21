@@ -8,7 +8,7 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ui.TextTransferable
-import don.codecollector.core.ContextCollector
+import don.codecollector.ContextCollector
 
 class CodeCollectAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

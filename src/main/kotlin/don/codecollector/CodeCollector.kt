@@ -1,4 +1,4 @@
-package don.codecollector.core
+package don.codecollector
 
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
