@@ -20,13 +20,14 @@ class CodeCollectAllAction : AnAction() {
             val collector = ContextCollector()
             val contexts = collector.collectAllFiles(project)
             val output = collector.formatContexts(contexts)
+            val totalLines = contexts.sumOf { it.content.lines().size }
 
             CopyPasteManager.getInstance().setContents(TextTransferable(output as CharSequence))
             NotificationGroupManager
                 .getInstance()
                 .getNotificationGroup("Code Collector")
                 .createNotification(
-                    "Copied all code context for ${contexts.size} files",
+                    "Copied all code context for ${contexts.size} files ($totalLines lines)",
                     NotificationType.INFORMATION,
                 ).notify(project)
         } catch (e: Exception) {

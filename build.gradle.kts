@@ -8,7 +8,6 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.5.0"
 }
 
-// Load .env file manually
 val envFile = rootProject.file(".env")
 if (envFile.exists()) {
     val props = Properties()
@@ -19,7 +18,7 @@ if (envFile.exists()) {
 }
 
 group = "don.codecollector"
-version = "1.0.2"
+version = "1.0.3"
 
 repositories {
     mavenCentral()
