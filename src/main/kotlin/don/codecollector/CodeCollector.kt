@@ -6,6 +6,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import don.codecollector.parsers.JavaKotlinParser
 import don.codecollector.resolvers.JvmResolver
@@ -87,29 +88,30 @@ class ContextCollector {
         processed: MutableSet<String>,
     ) {
         if (file.path in processed || !isSupported(file, project)) return
-
         processed.add(file.path)
 
-        try {
-            val content = String(file.contentsToByteArray())
-            val relativePath = getRelativePath(file, project)
-
-            contexts.add(FileContext(file.path, content, relativePath))
-
-            // Parse imports and resolve dependencies
-            val psiFile = PsiManager.getInstance(project).findFile(file) ?: return
-            val imports = parser.parseImports(psiFile)
-
-            imports.forEach { importInfo ->
-                val resolvedFile = resolver.resolve(importInfo.module, file, project)
-                resolvedFile?.let { resolved ->
+        addFileContext(file, project, contexts)?.let { psiFile ->
+            parser.parseImports(psiFile).forEach { importInfo ->
+                resolver.resolve(importInfo.module, file, project)?.let { resolved ->
                     processFile(resolved, project, contexts, processed)
                 }
             }
-        } catch (e: Exception) {
-            // Skip files that cause errors
         }
     }
+
+    private fun addFileContext(
+        file: VirtualFile,
+        project: Project,
+        contexts: MutableList<FileContext>,
+    ): PsiFile? =
+        try {
+            val content = String(file.contentsToByteArray())
+            val relativePath = getRelativePath(file, project)
+            contexts.add(FileContext(file.path, content, relativePath))
+            PsiManager.getInstance(project).findFile(file)
+        } catch (e: Exception) {
+            null
+        }
 
     fun formatContexts(contexts: List<FileContext>): String {
         var currentLine = 1
@@ -130,12 +132,11 @@ class ContextCollector {
     private fun isSupported(
         file: VirtualFile,
         project: Project,
-    ): Boolean {
-        if (file.extension !in setOf("java", "kt")) return false
-        if (!file.isValid || !file.exists()) return false
-
-        return isOfficialSourceFile(file, project)
-    }
+    ): Boolean =
+        file.extension in setOf("java", "kt") &&
+            file.isValid &&
+            file.exists() &&
+            isOfficialSourceFile(file, project)
 
     private fun isOfficialSourceFile(
         file: VirtualFile,

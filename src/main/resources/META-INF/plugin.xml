@@ -4,13 +4,14 @@
     <vendor>0-don</vendor>
 
     <description><![CDATA[
-    Gather code context for AI assistance by analyzing imports and collecting related Java/Kotlin files.
-    Features:
-    - Smart Import Analysis: Follows import chains to collect all related local files
-    - Java & Kotlin Support: Handles both languages seamlessly
-    - AI-Optimized Output: Line numbers and file headers for easy AI consumption
-    - K2 Mode Compatible: Works with both K1 and K2 Kotlin compiler modes
-    ]]></description>
+   Gather code context for AI assistance by analyzing imports and collecting related Java/Kotlin files.
+   Features:
+   - Smart Import Analysis: Follows import chains to collect all related local files
+   - Java & Kotlin Support: Handles both languages seamlessly
+   - AI-Optimized Output: Line numbers and file headers for easy AI consumption
+   - K2 Mode Compatible: Works with both K1 and K2 Kotlin compiler modes
+   - Configurable Ignore Patterns: Customize which files to exclude when collecting all code
+   ]]></description>
 
     <!-- Core dependencies -->
     <depends>com.intellij.modules.platform</depends>
@@ -20,6 +21,14 @@
     <!-- K2 compatibility declaration -->
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <projectConfigurable
+                parentId="tools"
+                instance="don.codecollector.settings.CodeCollectorConfigurable"
+                id="don.codecollector.settings"
+                displayName="Code Collector"/>
     </extensions>
 
     <actions>
