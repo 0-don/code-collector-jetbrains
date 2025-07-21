@@ -1,7 +1,8 @@
 <idea-plugin>
     <id>don.codecollector</id>
     <name>Code Collector</name>
-    <vendor>0-don</vendor>
+    <vendor email="don.cryptus@gmail.com" url="https://github.com/yourusername">0-don</vendor>
+    <version>1.0.0</version>
 
     <description><![CDATA[
    <html>
@@ -27,6 +28,15 @@
        </body>
    </html>
    ]]></description>
+
+    <change-notes><![CDATA[
+        <ul>
+            <li>Initial release</li>
+            <li>Smart import analysis for Java/Kotlin</li>
+            <li>AI-optimized code context collection</li>
+            <li>Configurable ignore patterns</li>
+        </ul>
+    ]]></change-notes>
 
     <!-- Core dependencies -->
     <depends>com.intellij.modules.platform</depends>
