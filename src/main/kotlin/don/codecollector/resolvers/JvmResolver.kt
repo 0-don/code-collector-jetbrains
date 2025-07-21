@@ -44,7 +44,7 @@ class JvmResolver {
                     null
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return null
         }
     }

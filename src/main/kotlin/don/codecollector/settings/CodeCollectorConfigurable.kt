@@ -13,7 +13,7 @@ import javax.swing.JOptionPane
 import javax.swing.JPanel
 
 class CodeCollectorConfigurable(
-    private val project: Project,
+    project: Project,
 ) : Configurable {
     private val settings = CodeCollectorSettings.getInstance(project)
     private val listModel = DefaultListModel<String>()

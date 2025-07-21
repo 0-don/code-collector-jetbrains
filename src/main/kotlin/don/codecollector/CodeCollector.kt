@@ -4,12 +4,15 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectFileIndex
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import don.codecollector.parsers.JavaKotlinParser
 import don.codecollector.resolvers.JvmResolver
+import don.codecollector.settings.CodeCollectorSettings
+import java.util.regex.Pattern
 
 data class FileContext(
     val path: String,
@@ -41,6 +44,8 @@ class ContextCollector {
     fun collectAllFiles(project: Project): List<FileContext> {
         val contexts = mutableListOf<FileContext>()
         val moduleManager = ModuleManager.getInstance(project)
+        val settings = CodeCollectorSettings.getInstance(project)
+        val ignorePatterns = settings.state.ignorePatterns
 
         // Process each module
         moduleManager.modules.forEach { module ->
@@ -48,7 +53,7 @@ class ContextCollector {
 
             // Get only source roots (exclude test sources)
             moduleRootManager.getSourceRoots(false).forEach { sourceRoot ->
-                collectFromSourceRoot(sourceRoot, project, contexts)
+                collectFromSourceRoot(sourceRoot, project, contexts, ignorePatterns)
             }
         }
 
@@ -59,25 +64,35 @@ class ContextCollector {
         sourceRoot: VirtualFile,
         project: Project,
         contexts: MutableList<FileContext>,
+        ignorePatterns: List<String>,
     ) {
         if (!sourceRoot.isValid || !sourceRoot.exists()) return
 
-        try {
-            sourceRoot.children?.forEach { file ->
-                if (file.isDirectory) {
-                    collectFromSourceRoot(file, project, contexts)
-                } else if (isSupported(file, project)) {
-                    try {
-                        val relativePath = getRelativePath(file, project)
-                        val content = String(file.contentsToByteArray())
-                        contexts.add(FileContext(file.path, content, relativePath))
-                    } catch (e: Exception) {
-                        // Skip files that can't be read
+        val queue = ArrayDeque<VirtualFile>()
+        queue.add(sourceRoot)
+
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+
+            try {
+                current.children?.forEach { file ->
+                    if (file.isDirectory) {
+                        queue.add(file)
+                    } else if (isSupported(file, project) &&
+                        !shouldIgnore(file, project, ignorePatterns)
+                    ) {
+                        try {
+                            val relativePath = getRelativePath(file, project)
+                            val content = String(file.contentsToByteArray())
+                            contexts.add(FileContext(file.path, content, relativePath))
+                        } catch (_: Exception) {
+                            // Skip files that can't be read
+                        }
                     }
                 }
+            } catch (_: Exception) {
+                // Skip directories that can't be accessed
             }
-        } catch (e: Exception) {
-            // Skip directories that can't be accessed
         }
     }
 
@@ -109,7 +124,7 @@ class ContextCollector {
             val relativePath = getRelativePath(file, project)
             contexts.add(FileContext(file.path, content, relativePath))
             PsiManager.getInstance(project).findFile(file)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 
@@ -154,6 +169,22 @@ class ContextCollector {
         val sourceRoots = moduleRootManager.getSourceRoots(false)
         return sourceRoots.any { sourceRoot ->
             VfsUtil.isAncestor(sourceRoot, file, false)
+        }
+    }
+
+    private fun shouldIgnore(
+        file: VirtualFile,
+        project: Project,
+        ignorePatterns: List<String>,
+    ): Boolean {
+        val relativePath = FileUtil.toSystemIndependentName(getRelativePath(file, project))
+        return ignorePatterns.any { pattern ->
+            try {
+                val regexPattern = FileUtil.convertAntToRegexp(pattern)
+                Pattern.compile(regexPattern).matcher(relativePath).matches()
+            } catch (_: Exception) {
+                false // Skip invalid patterns
+            }
         }
     }
 
