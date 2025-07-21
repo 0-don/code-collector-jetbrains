@@ -1,5 +1,7 @@
 package don.codecollector.actions
 
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -23,10 +25,13 @@ class CodeCollectAction : AnAction() {
             val output = collector.formatContexts(contexts)
 
             CopyPasteManager.getInstance().setContents(TextTransferable(output as CharSequence))
-            Messages.showInfoMessage(
-                "Copied context for ${contexts.size} files (from ${files.size} selected)",
-                "Code Collector",
-            )
+            NotificationGroupManager
+                .getInstance()
+                .getNotificationGroup("Code Collector")
+                .createNotification(
+                    "Copied context for ${contexts.size} files (from ${files.size} selected)",
+                    NotificationType.INFORMATION,
+                ).notify(project)
         } catch (e: Exception) {
             Messages.showMessageDialog(
                 project,

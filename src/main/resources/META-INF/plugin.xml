@@ -39,6 +39,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Code Collector" displayType="BALLOON"/>
         <projectConfigurable
                 parentId="tools"
                 instance="don.codecollector.settings.CodeCollectorConfigurable"
