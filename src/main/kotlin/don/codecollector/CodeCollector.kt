@@ -30,16 +30,77 @@ class ContextCollector {
     ): List<FileContext> {
         val contexts = mutableListOf<FileContext>()
         val processed = mutableSetOf<String>()
+        val settings = CodeCollectorSettings.getInstance(project)
 
-        // Clear resolver cache for fresh analysis
         resolver.clearCache()
 
-        files.filter { isSupported(it, project) }.forEach { file ->
-            processFile(file, project, contexts, processed)
+        // Expand directories to files
+        val allFiles =
+            files.flatMap { file ->
+                if (file.isDirectory) {
+                    collectFilesFromDirectory(file, project, settings.state.ignorePatterns)
+                } else {
+                    listOf(file)
+                }
+            }
+
+        allFiles.forEach { file ->
+            if (isJavaKotlin(file, project)) {
+                processFile(file, project, contexts, processed)
+            } else if (isValidFile(file, project)) {
+                addFileContext(file, project, contexts)
+            }
         }
 
         return contexts
     }
+
+    private fun collectFilesFromDirectory(
+        directory: VirtualFile,
+        project: Project,
+        ignorePatterns: List<String>,
+    ): List<VirtualFile> {
+        val files = mutableListOf<VirtualFile>()
+        val queue = ArrayDeque<VirtualFile>()
+        queue.add(directory)
+
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+
+            try {
+                current.children?.forEach { file ->
+                    if (file.isDirectory) {
+                        queue.add(file)
+                    } else if (isValidFile(file, project) &&
+                        !shouldIgnore(file, project, ignorePatterns)
+                    ) {
+                        files.add(file)
+                    }
+                }
+            } catch (_: Exception) {
+                // Skip inaccessible directories
+            }
+        }
+
+        return files
+    }
+
+    private fun isJavaKotlin(
+        file: VirtualFile,
+        project: Project,
+    ): Boolean =
+        file.extension in setOf("java", "kt") &&
+            file.isValid &&
+            file.exists() &&
+            isOfficialSourceFile(file, project)
+
+    private fun isValidFile(
+        file: VirtualFile,
+        project: Project,
+    ): Boolean =
+        file.isValid &&
+            file.exists() &&
+            !file.isDirectory
 
     fun collectAllFiles(project: Project): List<FileContext> {
         val contexts = mutableListOf<FileContext>()
