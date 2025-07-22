@@ -31,18 +31,26 @@ class ContextCollector {
         val contexts = mutableListOf<FileContext>()
         val processed = mutableSetOf<String>()
         val settings = CodeCollectorSettings.getInstance(project)
+        val allFilePaths = mutableSetOf<String>()
 
         resolver.clearCache()
 
-        // Expand directories to files
-        val allFiles =
-            files.flatMap { file ->
-                if (file.isDirectory) {
-                    collectFilesFromDirectory(file, project, settings.state.ignorePatterns)
-                } else {
-                    listOf(file)
+        val allFiles = mutableListOf<VirtualFile>()
+
+        files.forEach { file ->
+            if (file.isDirectory) {
+                collectFilesFromDirectory(file, project, settings.state.ignorePatterns)
+                    .forEach { dirFile ->
+                        if (allFilePaths.add(dirFile.path)) {
+                            allFiles.add(dirFile)
+                        }
+                    }
+            } else {
+                if (allFilePaths.add(file.path)) {
+                    allFiles.add(file)
                 }
             }
+        }
 
         allFiles.forEach { file ->
             if (isJavaKotlin(file, project)) {
