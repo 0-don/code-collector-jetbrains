@@ -4,29 +4,37 @@
     <vendor email="don.cryptus@gmail.com" url="https://github.com/0-don">0-don</vendor>
 
     <description><![CDATA[
-   <html>
-       <body>
-           <p>Gather code context for AI assistance by analyzing imports and collecting related Java/Kotlin files.</p>
+    <p><strong>Effortlessly extract and format your Java/Kotlin codebase for AI assistants.</strong></p>
 
-           <h3>Features:</h3>
-           <ul>
-               <li><strong>Smart Import Analysis:</strong> Follows import chains to collect all related local files</li>
-               <li><strong>Java & Kotlin Support:</strong> Handles both languages seamlessly</li>
-               <li><strong>AI-Optimized Output:</strong> Line numbers and file headers for easy AI consumption</li>
-               <li><strong>K2 Mode Compatible:</strong> Works with both K1 and K2 Kotlin compiler modes</li>
-               <li><strong>Configurable Ignore Patterns:</strong> Customize which files to exclude when collecting all code</li>
-           </ul>
+    <h3>Features</h3>
+    <ul>
+      <li><strong>Smart Code Collection</strong>: Automatically gathers Java and Kotlin source files with dependency resolution</li>
+      <li><strong>Two Collection Modes</strong>:
+        <ul>
+          <li>Collect from selected files/folders via right-click menu</li>
+          <li>Collect entire project codebase with one action</li>
+        </ul>
+      </li>
+      <li><strong>AI-Ready Formatting</strong>: Outputs code with file paths and line numbers for optimal AI context</li>
+      <li><strong>Intelligent Filtering</strong>: Excludes build outputs, generated sources, and external libraries</li>
+      <li><strong>Configurable Ignore Patterns</strong>: Customize which files to exclude (build/, target/, .git/, etc.)</li>
+      <li><strong>One-Click Copy</strong>: Formatted output automatically copied to clipboard</li>
+    </ul>
 
-           <h3>Usage:</h3>
-           <ul>
-               <li><strong>Code Collect:</strong> Right-click on file(s) or use <code>Ctrl+Shift+G</code> to collect import-based context</li>
-               <li><strong>Code Collect All:</strong> Right-click in project explorer to collect entire codebase</li>
-           </ul>
+    <h3>Perfect For</h3>
+    <ul>
+      <li>Sharing code context with AI assistants (ChatGPT, Claude, etc.)</li>
+      <li>Code reviews and architecture discussions</li>
+      <li>Getting AI help with refactoring and debugging</li>
+    </ul>
 
-           <p><em>Configure ignore patterns in Settings → Tools → Code Collector</em></p>
-       </body>
-   </html>
-   ]]></description>
+    <h3>How It Works</h3>
+    <p>Simply right-click on files/folders or use the "Collect All Code" action. The plugin formats your code like:</p>
+    <pre>// src/main/kotlin/MyClass.kt (L1-L50)
+    [your code here]</pre>
+
+    <p>All output is automatically copied to your clipboard, ready to paste into your AI assistant.</p>
+    ]]></description>
 
     <change-notes><![CDATA[
         <ul>
