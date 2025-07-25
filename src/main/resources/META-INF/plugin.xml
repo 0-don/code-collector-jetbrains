@@ -4,36 +4,38 @@
     <vendor email="don.cryptus@gmail.com" url="https://github.com/0-don">0-don</vendor>
 
     <description><![CDATA[
-    <p><strong>Effortlessly extract and format your Java/Kotlin codebase for AI assistants.</strong></p>
+    <p><strong>Copy all your code files so you can paste them to AI assistants like ChatGPT.</strong></p>
 
-    <h3>Features</h3>
+    <h3>What it does</h3>
     <ul>
-      <li><strong>Smart Code Collection</strong>: Automatically gathers Java and Kotlin source files with dependency resolution</li>
-      <li><strong>Two Collection Modes</strong>:
-        <ul>
-          <li>Collect from selected files/folders via right-click menu</li>
-          <li>Collect entire project codebase with one action</li>
-        </ul>
-      </li>
-      <li><strong>AI-Ready Formatting</strong>: Outputs code with file paths and line numbers for optimal AI context</li>
-      <li><strong>Intelligent Filtering</strong>: Excludes build outputs, generated sources, and external libraries</li>
-      <li><strong>Configurable Ignore Patterns</strong>: Customize which files to exclude (build/, target/, .git/, etc.)</li>
-      <li><strong>One-Click Copy</strong>: Formatted output automatically copied to clipboard</li>
+      <li>Right-click on files → copies all your code</li>
+      <li>Automatically finds related files that work together</li>
+      <li>Puts everything in a nice format with file names and line numbers</li>
+      <li>Perfect for asking AI to help with your code</li>
     </ul>
 
-    <h3>Perfect For</h3>
+    <h3>Two ways to use it</h3>
     <ul>
-      <li>Sharing code context with AI assistants (ChatGPT, Claude, etc.)</li>
-      <li>Code reviews and architecture discussions</li>
-      <li>Getting AI help with refactoring and debugging</li>
+      <li><strong>Selected files</strong>: Right-click files/folders → "Code Collect"</li>
+      <li><strong>Entire project</strong>: Right-click anywhere → "Code Collect All"</li>
     </ul>
 
-    <h3>How It Works</h3>
-    <p>Simply right-click on files/folders or use the "Collect All Code" action. The plugin formats your code like:</p>
+    <h3>What you get</h3>
     <pre>// src/main/kotlin/MyClass.kt (L1-L50)
-    [your code here]</pre>
+    [your actual code here]
 
-    <p>All output is automatically copied to your clipboard, ready to paste into your AI assistant.</p>
+    // src/main/kotlin/AnotherClass.kt (L51-L100)
+    [more code here]</pre>
+
+    <p>Everything goes to your clipboard automatically. Just paste it into ChatGPT, Claude, or any AI assistant!</p>
+
+    <h3>Smart features</h3>
+    <ul>
+      <li>Skips build files, libraries, and generated code</li>
+      <li>Only includes your actual source code</li>
+      <li>Works with Java and Kotlin projects</li>
+      <li>Customizable ignore patterns in settings</li>
+    </ul>
     ]]></description>
 
     <change-notes><![CDATA[
