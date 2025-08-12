@@ -1,6 +1,5 @@
 package don.codecollector
 
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectFileIndex
@@ -55,7 +54,7 @@ class ContextCollector {
         allFiles.forEach { file ->
             if (isJavaKotlin(file, project)) {
                 processFile(file, project, contexts, processed)
-            } else if (isValidFile(file, project)) {
+            } else if (isValidFile(file)) {
                 addFileContext(file, project, contexts)
             }
         }
@@ -79,7 +78,7 @@ class ContextCollector {
                 current.children?.forEach { file ->
                     if (file.isDirectory) {
                         queue.add(file)
-                    } else if (isValidFile(file, project) &&
+                    } else if (isValidFile(file) &&
                         !shouldIgnore(file, project, ignorePatterns)
                     ) {
                         files.add(file)
@@ -102,10 +101,7 @@ class ContextCollector {
             file.exists() &&
             isOfficialSourceFile(file, project)
 
-    private fun isValidFile(
-        file: VirtualFile,
-        project: Project,
-    ): Boolean =
+    private fun isValidFile(file: VirtualFile): Boolean =
         file.isValid &&
             file.exists() &&
             !file.isDirectory
@@ -117,8 +113,11 @@ class ContextCollector {
         val processedPaths = mutableSetOf<String>()
 
         // Collect from project root (includes files like pom.xml)
-        project.baseDir?.let { projectRoot ->
-            collectFromDirectory(projectRoot, project, contexts, ignorePatterns, processedPaths)
+        project.basePath?.let { basePath ->
+            val projectRoot = VfsUtil.findFileByIoFile(java.io.File(basePath), true)
+            projectRoot?.let { root ->
+                collectFromDirectory(root, project, contexts, ignorePatterns, processedPaths)
+            }
         }
 
         return contexts
@@ -145,7 +144,7 @@ class ContextCollector {
 
                     if (file.isDirectory) {
                         queue.add(file)
-                    } else if (isValidFile(file, project) &&
+                    } else if (isValidFile(file) &&
                         !shouldIgnore(file, project, ignorePatterns)
                     ) {
                         try {
@@ -162,16 +161,6 @@ class ContextCollector {
                 // Skip directories that can't be accessed
             }
         }
-    }
-
-    private fun collectFromSourceRoot(
-        sourceRoot: VirtualFile,
-        project: Project,
-        contexts: MutableList<FileContext>,
-        ignorePatterns: List<String>,
-        processedPaths: MutableSet<String>,
-    ) {
-        collectFromDirectory(sourceRoot, project, contexts, ignorePatterns, processedPaths)
     }
 
     private fun processFile(

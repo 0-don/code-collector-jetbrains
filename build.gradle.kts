@@ -12,13 +12,13 @@ val envFile = rootProject.file(".env")
 if (envFile.exists()) {
     val props = Properties()
     props.load(FileInputStream(envFile))
-    props.forEach { key, value ->
+    props.forEach { (key, value) ->
         System.setProperty(key.toString(), value.toString())
     }
 }
 
 group = "don.codecollector"
-version = "1.0.8"
+version = "1.0.9"
 
 repositories {
     mavenCentral()
