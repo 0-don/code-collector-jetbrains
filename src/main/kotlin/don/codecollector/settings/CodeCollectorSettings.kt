@@ -75,6 +75,8 @@ class CodeCollectorSettings : PersistentStateComponent<CodeCollectorSettings.Sta
                 "**/generated/**",
                 "**/generated-sources/**",
                 "**/generated-test-sources/**",
+                "**/wiremock/**",
+                "**/docker/**",
             )
     }
 }

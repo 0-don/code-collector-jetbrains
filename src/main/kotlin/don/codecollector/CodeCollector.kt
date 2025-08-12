@@ -112,48 +112,47 @@ class ContextCollector {
 
     fun collectAllFiles(project: Project): List<FileContext> {
         val contexts = mutableListOf<FileContext>()
-        val moduleManager = ModuleManager.getInstance(project)
         val settings = CodeCollectorSettings.getInstance(project)
         val ignorePatterns = settings.state.ignorePatterns
+        val processedPaths = mutableSetOf<String>()
 
-        // Process each module
-        moduleManager.modules.forEach { module ->
-            val moduleRootManager = ModuleRootManager.getInstance(module)
-
-            // Get only source roots (exclude test sources)
-            moduleRootManager.getSourceRoots(false).forEach { sourceRoot ->
-                collectFromSourceRoot(sourceRoot, project, contexts, ignorePatterns)
-            }
+        // Collect from project root (includes files like pom.xml)
+        project.baseDir?.let { projectRoot ->
+            collectFromDirectory(projectRoot, project, contexts, ignorePatterns, processedPaths)
         }
 
         return contexts
     }
 
-    private fun collectFromSourceRoot(
-        sourceRoot: VirtualFile,
+    private fun collectFromDirectory(
+        directory: VirtualFile,
         project: Project,
         contexts: MutableList<FileContext>,
         ignorePatterns: List<String>,
+        processedPaths: MutableSet<String>,
     ) {
-        if (!sourceRoot.isValid || !sourceRoot.exists()) return
+        if (!directory.isValid || !directory.exists()) return
 
         val queue = ArrayDeque<VirtualFile>()
-        queue.add(sourceRoot)
+        queue.add(directory)
 
         while (queue.isNotEmpty()) {
             val current = queue.removeFirst()
 
             try {
                 current.children?.forEach { file ->
+                    if (processedPaths.contains(file.path)) return@forEach
+
                     if (file.isDirectory) {
                         queue.add(file)
-                    } else if (isSupported(file, project) &&
+                    } else if (isValidFile(file, project) &&
                         !shouldIgnore(file, project, ignorePatterns)
                     ) {
                         try {
                             val relativePath = getRelativePath(file, project)
                             val content = String(file.contentsToByteArray())
                             contexts.add(FileContext(file.path, content, relativePath))
+                            processedPaths.add(file.path)
                         } catch (_: Exception) {
                             // Skip files that can't be read
                         }
@@ -163,6 +162,16 @@ class ContextCollector {
                 // Skip directories that can't be accessed
             }
         }
+    }
+
+    private fun collectFromSourceRoot(
+        sourceRoot: VirtualFile,
+        project: Project,
+        contexts: MutableList<FileContext>,
+        ignorePatterns: List<String>,
+        processedPaths: MutableSet<String>,
+    ) {
+        collectFromDirectory(sourceRoot, project, contexts, ignorePatterns, processedPaths)
     }
 
     private fun processFile(
