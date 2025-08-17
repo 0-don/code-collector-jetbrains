@@ -3,40 +3,38 @@
     <name>Code Collector</name>
     <vendor email="don.cryptus@gmail.com" url="https://github.com/0-don">0-don</vendor>
 
-    <description><![CDATA[
-    <p><strong>Copy all your code files so you can paste them to AI assistants like ChatGPT.</strong></p>
+    <description>
+        <![CDATA[
+            <p><strong>Efficiently collect code context for AI assistants by analyzing project dependencies.</strong></p>
 
-    <h3>What it does</h3>
-    <ul>
-      <li>Right-click on files → copies all your code</li>
-      <li>Automatically finds related files that work together</li>
-      <li>Puts everything in a nice format with file names and line numbers</li>
-      <li>Perfect for asking AI to help with your code</li>
-    </ul>
+            <h3>Features</h3>
+            <ul>
+              <li><strong>Smart Collection</strong>: Follows imports to gather related files automatically</li>
+              <li><strong>Direct Collection</strong>: Copy selected files without dependency analysis</li>
+              <li><strong>Full Project</strong>: Collect entire codebase with intelligent filtering</li>
+              <li><strong>AI-Optimized</strong>: Formats output with file paths and line numbers</li>
+            </ul>
 
-    <h3>Two ways to use it</h3>
-    <ul>
-      <li><strong>Selected files</strong>: Right-click files/folders → "Code Collect"</li>
-      <li><strong>Entire project</strong>: Right-click anywhere → "Code Collect All"</li>
-    </ul>
+            <h3>Output Format</h3>
+            <pre>// src/main/kotlin/Service.kt (L1-L45)
+            class UserService {
+                // your code here
+            }
 
-    <h3>What you get</h3>
-    <pre>// src/main/kotlin/MyClass.kt (L1-L50)
-    [your actual code here]
+            // src/main/kotlin/Model.kt (L46-L78)
+            data class User(val id: Long)</pre>
 
-    // src/main/kotlin/AnotherClass.kt (L51-L100)
-    [more code here]</pre>
+            <h3>Usage</h3>
+            <ul>
+              <li>Right-click files/folders → "Code Collect (Smart)" - follows imports</li>
+              <li>Right-click files/folders → "Code Collect (Direct)" - selected files only</li>
+              <li>Right-click project → "Code Collect (All)" - entire codebase</li>
+              <li>Keyboard shortcut: Ctrl+Shift+G</li>
+            </ul>
 
-    <p>Everything goes to your clipboard automatically. Just paste it into ChatGPT, Claude, or any AI assistant!</p>
-
-    <h3>Smart features</h3>
-    <ul>
-      <li>Skips build files, libraries, and generated code</li>
-      <li>Only includes your actual source code</li>
-      <li>Works with Java and Kotlin projects</li>
-      <li>Customizable ignore patterns in settings</li>
-    </ul>
-    ]]></description>
+            <p>Supports Java and Kotlin with configurable ignore patterns for build directories and generated files.</p>
+        ]]>
+    </description>
 
     <change-notes><![CDATA[
         <ul>

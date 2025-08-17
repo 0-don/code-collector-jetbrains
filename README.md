@@ -25,15 +25,21 @@ gathering related files.
 
 ## Usage
 
-### Code Collect (Import-based)
+### Code Collect (Smart)
 
-- Right-click files → `Code Collect`
+- Right-click files → `Code Collect (Smart)`
 - Shortcut: `Ctrl+Shift+G`
 - Follows imports to collect related files
 
-### Code Collect All
+### Code Collect (Direct)
 
-- Right-click in Project Explorer → `Code Collect All`
+- Right-click files → `Code Collect (Direct)`
+- Shortcut: `Ctrl+Shift+D`
+- Collects only selected files without imports
+
+### Code Collect (All)
+
+- Right-click in Project Explorer → `Code Collect (All)`
 - Collects entire codebase (respects ignore patterns)
 
 ## Configuration
