@@ -69,7 +69,7 @@
     <actions>
         <action id="don.codecollector.gatherImports"
                 class="don.codecollector.actions.CodeCollectAction"
-                text="Code Collect"
+                text="Code Collect (with imports)"
                 description="Collect code context based on imports">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="before"
                           relative-to-action="CutCopyPasteGroup"/>
@@ -77,12 +77,22 @@
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift G"/>
         </action>
 
+        <action id="don.codecollector.collectSimple"
+                class="don.codecollector.actions.CodeCollectSimpleAction"
+                text="Code Collect (selected only)"
+                description="Collect only selected files without following imports">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after"
+                          relative-to-action="don.codecollector.gatherImports"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="after"
+                          relative-to-action="don.codecollector.gatherImports"/>
+        </action>
+
         <action id="don.codecollector.collectAll"
                 class="don.codecollector.actions.CodeCollectAllAction"
                 text="Code Collect All"
                 description="Collect all project code">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after"
-                          relative-to-action="don.codecollector.gatherImports"/>
+                          relative-to-action="don.codecollector.collectSimple"/>
         </action>
     </actions>
 </idea-plugin>

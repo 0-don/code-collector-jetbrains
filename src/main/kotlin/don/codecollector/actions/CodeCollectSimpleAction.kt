@@ -11,7 +11,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.util.ui.TextTransferable
 import don.codecollector.ContextCollector
 
-class CodeCollectAction : AnAction() {
+class CodeCollectSimpleAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -20,7 +20,7 @@ class CodeCollectAction : AnAction() {
 
         try {
             val collector = ContextCollector()
-            val contexts = collector.collectFromFiles(files.toList(), project)
+            val contexts = collector.collectSelectedFiles(files.toList(), project)
             val output = collector.formatContexts(contexts)
             val totalLines = contexts.sumOf { it.content.lines().size }
 
@@ -29,7 +29,7 @@ class CodeCollectAction : AnAction() {
                 .getInstance()
                 .getNotificationGroup("Code Collector")
                 .createNotification(
-                    "Copied context for ${contexts.size} files ($totalLines lines) with imports from ${files.size} selected",
+                    "Copied ${contexts.size} files ($totalLines lines) from ${files.size} selected (no imports)",
                     NotificationType.INFORMATION,
                 ).notify(project)
         } catch (e: Exception) {
