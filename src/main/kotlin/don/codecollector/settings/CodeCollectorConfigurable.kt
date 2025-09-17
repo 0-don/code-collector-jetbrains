@@ -3,6 +3,7 @@ package don.codecollector.settings
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.CheckboxTree
+import com.intellij.ui.CheckboxTreeBase
 import com.intellij.ui.CheckedTreeNode
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.util.ui.tree.TreeUtil
@@ -61,6 +62,7 @@ class CodeCollectorConfigurable(
                     }
                 },
                 rootNode,
+                CheckboxTreeBase.CheckPolicy(true, true, false, false), // Add this line
             )
 
         // Configure tree
