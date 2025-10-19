@@ -20,40 +20,39 @@ data class FileContext(
     val relativePath: String,
 )
 
+enum class CollectionMode {
+    SMART,    // Follow imports
+    DIRECT,   // Selected files only
+    ALL       // Entire project
+}
+
 class CodeCollector {
     private val parser = JavaKotlinParser()
     private val resolver = JvmResolver()
 
-    fun collectFromFiles(
+    fun collect(
         files: List<VirtualFile>,
         project: Project,
+        mode: CollectionMode
     ): List<FileContext> {
-        val contexts = mutableListOf<FileContext>()
-        val processed = mutableSetOf<String>()
-        val allFilePaths = mutableSetOf<String>()
-
         resolver.clearCache()
 
-        val allFiles = mutableListOf<VirtualFile>()
-
-        files.forEach { file ->
-            if (file.isDirectory) {
-                collectFilesFromDirectory(file, project)
-                    .forEach { dirFile ->
-                        if (allFilePaths.add(dirFile.path)) {
-                            allFiles.add(dirFile)
-                        }
-                    }
-            } else {
-                if (allFilePaths.add(file.path)) {
-                    allFiles.add(file)
-                }
-            }
+        return when (mode) {
+            CollectionMode.SMART -> collectSmart(files, project)
+            CollectionMode.DIRECT -> collectDirect(files, project)
+            CollectionMode.ALL -> collectAll(project)
         }
+    }
+
+    private fun collectSmart(files: List<VirtualFile>, project: Project): List<FileContext> {
+        val contexts = mutableListOf<FileContext>()
+        val processed = mutableSetOf<String>()
+
+        val allFiles = expandDirectoriesWithIgnorePatterns(files, project)
 
         allFiles.forEach { file ->
             if (isJavaKotlin(file, project)) {
-                processFile(file, project, contexts, processed)
+                processFileWithImports(file, project, contexts, processed)
             } else if (isValidFile(file)) {
                 addFileContext(file, project, contexts)
             }
@@ -62,9 +61,85 @@ class CodeCollector {
         return contexts
     }
 
-    private fun collectFilesFromDirectory(
+    private fun collectDirect(files: List<VirtualFile>, project: Project): List<FileContext> {
+        val contexts = mutableListOf<FileContext>()
+        val processed = mutableSetOf<String>()
+
+        val allFiles = expandDirectoriesWithoutIgnorePatterns(files)
+
+        allFiles.forEach { file ->
+            if (processed.add(file.path) && isValidFile(file)) {
+                addFileContext(file, project, contexts)
+            }
+        }
+
+        return contexts
+    }
+
+    private fun collectAll(project: Project): List<FileContext> {
+        val contexts = mutableListOf<FileContext>()
+        val processed = mutableSetOf<String>()
+
+        project.basePath?.let { basePath ->
+            val projectRoot = VfsUtil.findFileByIoFile(java.io.File(basePath), true)
+            projectRoot?.let { root ->
+                processDirectoryWithIgnorePatterns(root, project, contexts, processed)
+            }
+        }
+
+        return contexts
+    }
+
+    private fun expandDirectoriesWithIgnorePatterns(
+        files: List<VirtualFile>,
+        project: Project
+    ): List<VirtualFile> {
+        val result = mutableListOf<VirtualFile>()
+        val seen = mutableSetOf<String>()
+
+        files.forEach { file ->
+            if (file.isDirectory) {
+                collectFromDirectoryWithIgnorePatterns(file, project).forEach { dirFile ->
+                    if (seen.add(dirFile.path)) {
+                        result.add(dirFile)
+                    }
+                }
+            } else {
+                if (seen.add(file.path)) {
+                    result.add(file)
+                }
+            }
+        }
+
+        return result
+    }
+
+    private fun expandDirectoriesWithoutIgnorePatterns(
+        files: List<VirtualFile>,
+    ): List<VirtualFile> {
+        val result = mutableListOf<VirtualFile>()
+        val seen = mutableSetOf<String>()
+
+        files.forEach { file ->
+            if (file.isDirectory) {
+                collectFromDirectoryWithoutIgnorePatterns(file).forEach { dirFile ->
+                    if (seen.add(dirFile.path)) {
+                        result.add(dirFile)
+                    }
+                }
+            } else {
+                if (seen.add(file.path)) {
+                    result.add(file)
+                }
+            }
+        }
+
+        return result
+    }
+
+    private fun collectFromDirectoryWithIgnorePatterns(
         directory: VirtualFile,
-        project: Project,
+        project: Project
     ): List<VirtualFile> {
         val files = mutableListOf<VirtualFile>()
         val queue = ArrayDeque<VirtualFile>()
@@ -77,9 +152,7 @@ class CodeCollector {
                 current.children?.forEach { file ->
                     if (file.isDirectory) {
                         queue.add(file)
-                    } else if (isValidFile(file) &&
-                        !shouldIgnore(file, project)
-                    ) {
+                    } else if (isValidFile(file) && !shouldIgnore(file, project)) {
                         files.add(file)
                     }
                 }
@@ -91,7 +164,7 @@ class CodeCollector {
         return files
     }
 
-    private fun collectFilesFromDirectoryDirect(
+    private fun collectFromDirectoryWithoutIgnorePatterns(
         directory: VirtualFile,
     ): List<VirtualFile> {
         val files = mutableListOf<VirtualFile>()
@@ -117,100 +190,11 @@ class CodeCollector {
         return files
     }
 
-    private fun isJavaKotlin(
-        file: VirtualFile,
-        project: Project,
-    ): Boolean =
-        file.extension in setOf("java", "kt") &&
-                file.isValid &&
-                file.exists() &&
-                isOfficialSourceFile(file, project)
-
-    private fun isTextFile(file: VirtualFile): Boolean {
-        return try {
-            // Read first few bytes to check if it's text
-            val bytes = file.contentsToByteArray().take(1024).toByteArray()
-
-            // Check for null bytes (strong indicator of binary)
-            if (bytes.contains(0)) return false
-
-            // Try to decode as UTF-8
-            val text = String(bytes, Charsets.UTF_8)
-
-            // Check if decoding was successful (no replacement characters)
-            !text.contains('\uFFFD')
-        } catch (_: Exception) {
-            false
-        }
-    }
-
-    private fun isValidFile(file: VirtualFile): Boolean =
-        file.isValid &&
-                file.exists() &&
-                !file.isDirectory &&
-                isTextFile(file)
-
-    fun collectAllFiles(project: Project): List<FileContext> {
-        val contexts = mutableListOf<FileContext>()
-        val processedPaths = mutableSetOf<String>()
-
-        // Collect from project root (includes files like pom.xml)
-        project.basePath?.let { basePath ->
-            val projectRoot = VfsUtil.findFileByIoFile(java.io.File(basePath), true)
-            projectRoot?.let { root ->
-                collectFromDirectory(root, project, contexts, processedPaths)
-            }
-        }
-
-        return contexts
-    }
-
-    fun collectSelectedFiles(
-        files: List<VirtualFile>,
-        project: Project,
-    ): List<FileContext> {
-        val contexts = mutableListOf<FileContext>()
-        val processed = mutableSetOf<String>()
-
-        files.forEach { file ->
-            if (file.isDirectory) {
-                // Collect all files from directory without import analysis or ignore filtering
-                collectFilesFromDirectoryDirect(file)
-                    .forEach { dirFile ->
-                        if (processed.add(dirFile.path)) {
-                            addSimpleFileContext(dirFile, project, contexts)
-                        }
-                    }
-            } else {
-                // Add individual file without import analysis or ignore filtering
-                if (processed.add(file.path) && isValidFile(file)) {
-                    addSimpleFileContext(file, project, contexts)
-                }
-            }
-        }
-
-        return contexts
-    }
-
-    private fun addSimpleFileContext(
-        file: VirtualFile,
-        project: Project,
-        contexts: MutableList<FileContext>,
-    ) {
-        try {
-            val content = String(file.contentsToByteArray())
-            val relativePath = getRelativePath(file, project)
-            contexts.add(FileContext(file.path, content, relativePath))
-        } catch (_: Exception) {
-            // Skip files that can't be read
-        }
-    }
-
-    private fun collectFromDirectory(
+    private fun processDirectoryWithIgnorePatterns(
         directory: VirtualFile,
         project: Project,
         contexts: MutableList<FileContext>,
-        processedPaths: MutableSet<String>,
+        processed: MutableSet<String>
     ) {
         if (!directory.isValid || !directory.exists()) return
 
@@ -222,20 +206,13 @@ class CodeCollector {
 
             try {
                 current.children?.forEach { file ->
-                    if (processedPaths.contains(file.path)) return@forEach
+                    if (processed.contains(file.path)) return@forEach
 
                     if (file.isDirectory) {
                         queue.add(file)
-                    } else if (isValidFile(file) &&
-                        !shouldIgnore(file, project)
-                    ) {
-                        try {
-                            val relativePath = getRelativePath(file, project)
-                            val content = String(file.contentsToByteArray())
-                            contexts.add(FileContext(file.path, content, relativePath))
-                            processedPaths.add(file.path)
-                        } catch (_: Exception) {
-                            // Skip files that can't be read
+                    } else if (isValidFile(file) && !shouldIgnore(file, project)) {
+                        addFileContext(file, project, contexts)?.let {
+                            processed.add(file.path)
                         }
                     }
                 }
@@ -245,7 +222,7 @@ class CodeCollector {
         }
     }
 
-    private fun processFile(
+    private fun processFileWithImports(
         file: VirtualFile,
         project: Project,
         contexts: MutableList<FileContext>,
@@ -257,21 +234,13 @@ class CodeCollector {
         addFileContext(file, project, contexts)?.let { psiFile ->
             parser.parseImports(psiFile).forEach { importInfo ->
                 resolver.resolve(importInfo.module, file, project)?.let { resolved ->
-                    // KEY CHANGE: Process resolved files even if they're not in "official" source files
-                    // This allows test imports to pull in service/component files
                     if (resolved.path !in processed && isJavaKotlinFile(resolved)) {
-                        processFile(resolved, project, contexts, processed)
+                        processFileWithImports(resolved, project, contexts, processed)
                     }
                 }
             }
         }
     }
-
-    // Add this helper method to check if file is Java/Kotlin without strict source validation
-    private fun isJavaKotlinFile(file: VirtualFile): Boolean =
-        file.extension in setOf("java", "kt") &&
-                file.isValid &&
-                file.exists()
 
     private fun addFileContext(
         file: VirtualFile,
@@ -303,19 +272,41 @@ class CodeCollector {
         return output.toString()
     }
 
-    private fun isSupported(
-        file: VirtualFile,
-        project: Project,
-    ): Boolean =
+    private fun isJavaKotlin(file: VirtualFile, project: Project): Boolean =
         file.extension in setOf("java", "kt") &&
                 file.isValid &&
                 file.exists() &&
                 isOfficialSourceFile(file, project)
 
-    private fun isOfficialSourceFile(
-        file: VirtualFile,
-        project: Project,
-    ): Boolean {
+    private fun isJavaKotlinFile(file: VirtualFile): Boolean =
+        file.extension in setOf("java", "kt") &&
+                file.isValid &&
+                file.exists()
+
+    private fun isTextFile(file: VirtualFile): Boolean {
+        return try {
+            val bytes = file.contentsToByteArray().take(1024).toByteArray()
+            if (bytes.contains(0)) return false
+            val text = String(bytes, Charsets.UTF_8)
+            !text.contains('\uFFFD')
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun isValidFile(file: VirtualFile): Boolean =
+        file.isValid &&
+                file.exists() &&
+                !file.isDirectory &&
+                isTextFile(file)
+
+    private fun isSupported(file: VirtualFile, project: Project): Boolean =
+        file.extension in setOf("java", "kt") &&
+                file.isValid &&
+                file.exists() &&
+                isOfficialSourceFile(file, project)
+
+    private fun isOfficialSourceFile(file: VirtualFile, project: Project): Boolean {
         val fileIndex = ProjectFileIndex.getInstance(project)
 
         if (!fileIndex.isInProject(file)) return false
@@ -324,9 +315,7 @@ class CodeCollector {
 
         val module = fileIndex.getModuleForFile(file) ?: return false
         val moduleRootManager = ModuleRootManager.getInstance(module)
-
-        // CHANGE: Include both main source roots AND test source roots
-        val sourceRoots = moduleRootManager.getSourceRoots(true) // true includes test sources
+        val sourceRoots = moduleRootManager.getSourceRoots(true)
         return sourceRoots.any { sourceRoot ->
             VfsUtil.isAncestor(sourceRoot, file, false)
         }
@@ -343,21 +332,14 @@ class CodeCollector {
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
                 val fullPath = Paths.get(relativePath)
                 val fileNamePath = Paths.get(fileName)
-
-                // Test against both full path and filename
-                matcher.matches(fullPath) || matcher.matches(fileNamePath) ||
-                        // Simple contains check for directory names
-                        relativePath.contains(pattern)
+                matcher.matches(fullPath) || matcher.matches(fileNamePath) || relativePath.contains(pattern)
             } catch (_: Exception) {
                 false
             }
         }
     }
 
-    private fun getRelativePath(
-        file: VirtualFile,
-        project: Project,
-    ): String {
+    private fun getRelativePath(file: VirtualFile, project: Project): String {
         val basePath = project.basePath ?: return file.name
         return file.path.removePrefix("$basePath/")
     }

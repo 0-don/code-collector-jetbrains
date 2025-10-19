@@ -10,8 +10,9 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.util.ui.TextTransferable
 import don.codecollector.CodeCollector
+import don.codecollector.CollectionMode
 
-class CodeCollectAction : AnAction() {
+class CodeCollectDirectAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -20,7 +21,7 @@ class CodeCollectAction : AnAction() {
 
         try {
             val collector = CodeCollector()
-            val contexts = collector.collectFromFiles(files.toList(), project)
+            val contexts = collector.collect(files.toList(), project, CollectionMode.DIRECT)
             val output = collector.formatContexts(contexts)
             val totalLines = contexts.sumOf { it.content.lines().size }
 
@@ -29,7 +30,7 @@ class CodeCollectAction : AnAction() {
                 .getInstance()
                 .getNotificationGroup("Code Collector")
                 .createNotification(
-                    "Copied context for ${contexts.size} files ($totalLines lines) with imports from ${files.size} selected",
+                    "Copied ${contexts.size} files ($totalLines lines) from ${files.size} selected (no imports)",
                     NotificationType.INFORMATION,
                 ).notify(project)
         } catch (e: Exception) {

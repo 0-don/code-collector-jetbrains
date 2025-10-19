@@ -9,6 +9,7 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.util.ui.TextTransferable
 import don.codecollector.CodeCollector
+import don.codecollector.CollectionMode
 
 class CodeCollectAllAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -18,7 +19,7 @@ class CodeCollectAllAction : AnAction() {
 
         try {
             val collector = CodeCollector()
-            val contexts = collector.collectAllFiles(project)
+            val contexts = collector.collect(emptyList(), project, CollectionMode.ALL)
             val output = collector.formatContexts(contexts)
             val totalLines = contexts.sumOf { it.content.lines().size }
 

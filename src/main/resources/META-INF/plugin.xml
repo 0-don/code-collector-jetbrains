@@ -66,7 +66,7 @@
 
     <actions>
         <action id="don.codecollector.gatherImports"
-                class="don.codecollector.actions.CodeCollectAction"
+                class="don.codecollector.actions.CodeCollectSmartAction"
                 text="Code Collect (Smart)"
                 description="Collect code context based on imports">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="before"
@@ -76,12 +76,10 @@
         </action>
 
         <action id="don.codecollector.collectSimple"
-                class="don.codecollector.actions.CodeCollectSimpleAction"
+                class="don.codecollector.actions.CodeCollectDirectAction"
                 text="Code Collect (Direct)"
                 description="Collect only selected files without following imports">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after"
-                          relative-to-action="don.codecollector.gatherImports"/>
-            <add-to-group group-id="EditorPopupMenu" anchor="after"
                           relative-to-action="don.codecollector.gatherImports"/>
         </action>
 
