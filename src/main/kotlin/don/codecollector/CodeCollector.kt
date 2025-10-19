@@ -113,7 +113,7 @@ class CodeCollector {
 
             // Check if decoding was successful (no replacement characters)
             !text.contains('\uFFFD')
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
