@@ -11,7 +11,8 @@ import com.intellij.psi.PsiManager
 import don.codecollector.parsers.JavaKotlinParser
 import don.codecollector.resolvers.JvmResolver
 import don.codecollector.settings.CodeCollectorSettings
-import java.util.regex.Pattern
+import java.nio.file.FileSystems
+import java.nio.file.Paths
 
 data class FileContext(
     val path: String,
@@ -95,14 +96,14 @@ class ContextCollector {
         project: Project,
     ): Boolean =
         file.extension in setOf("java", "kt") &&
-            file.isValid &&
-            file.exists() &&
-            isOfficialSourceFile(file, project)
+                file.isValid &&
+                file.exists() &&
+                isOfficialSourceFile(file, project)
 
     private fun isValidFile(file: VirtualFile): Boolean =
         file.isValid &&
-            file.exists() &&
-            !file.isDirectory
+                file.exists() &&
+                !file.isDirectory
 
     fun collectAllFiles(project: Project): List<FileContext> {
         val contexts = mutableListOf<FileContext>()
@@ -257,9 +258,9 @@ class ContextCollector {
         project: Project,
     ): Boolean =
         file.extension in setOf("java", "kt") &&
-            file.isValid &&
-            file.exists() &&
-            isOfficialSourceFile(file, project)
+                file.isValid &&
+                file.exists() &&
+                isOfficialSourceFile(file, project)
 
     private fun isOfficialSourceFile(
         file: VirtualFile,
@@ -280,19 +281,22 @@ class ContextCollector {
         }
     }
 
-    private fun shouldIgnore(
-        file: VirtualFile,
-        project: Project,
-    ): Boolean {
+    private fun shouldIgnore(file: VirtualFile, project: Project): Boolean {
         val settings = CodeCollectorSettings.getInstance(project)
-        val enabledPatterns = settings.getEnabledPatterns() // Use only enabled patterns
+        val enabledPatterns = settings.getEnabledPatterns()
         val relativePath = FileUtil.toSystemIndependentName(getRelativePath(file, project))
+        val fileName = file.name
+
         return enabledPatterns.any { pattern ->
             try {
-                val regexPattern = FileUtil.convertAntToRegexp(pattern)
-                Pattern.compile(regexPattern).matcher(relativePath).matches()
+                val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+                val fullPath = Paths.get(relativePath)
+                val fileNamePath = Paths.get(fileName)
+
+                // Test against both full path and filename
+                matcher.matches(fullPath) || matcher.matches(fileNamePath)
             } catch (_: Exception) {
-                false // Skip invalid patterns
+                false
             }
         }
     }
