@@ -20,7 +20,7 @@ data class FileContext(
     val relativePath: String,
 )
 
-class ContextCollector {
+class CodeCollector {
     private val parser = JavaKotlinParser()
     private val resolver = JvmResolver()
 
@@ -217,11 +217,21 @@ class ContextCollector {
         addFileContext(file, project, contexts)?.let { psiFile ->
             parser.parseImports(psiFile).forEach { importInfo ->
                 resolver.resolve(importInfo.module, file, project)?.let { resolved ->
-                    processFile(resolved, project, contexts, processed)
+                    // KEY CHANGE: Process resolved files even if they're not in "official" source files
+                    // This allows test imports to pull in service/component files
+                    if (resolved.path !in processed && isJavaKotlinFile(resolved)) {
+                        processFile(resolved, project, contexts, processed)
+                    }
                 }
             }
         }
     }
+
+    // Add this helper method to check if file is Java/Kotlin without strict source validation
+    private fun isJavaKotlinFile(file: VirtualFile): Boolean =
+        file.extension in setOf("java", "kt") &&
+                file.isValid &&
+                file.exists()
 
     private fun addFileContext(
         file: VirtualFile,
@@ -275,7 +285,8 @@ class ContextCollector {
         val module = fileIndex.getModuleForFile(file) ?: return false
         val moduleRootManager = ModuleRootManager.getInstance(module)
 
-        val sourceRoots = moduleRootManager.getSourceRoots(false)
+        // CHANGE: Include both main source roots AND test source roots
+        val sourceRoots = moduleRootManager.getSourceRoots(true) // true includes test sources
         return sourceRoots.any { sourceRoot ->
             VfsUtil.isAncestor(sourceRoot, file, false)
         }

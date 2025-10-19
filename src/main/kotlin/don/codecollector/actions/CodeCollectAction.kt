@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.util.ui.TextTransferable
-import don.codecollector.ContextCollector
+import don.codecollector.CodeCollector
 
 class CodeCollectAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -19,7 +19,7 @@ class CodeCollectAction : AnAction() {
         val files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return
 
         try {
-            val collector = ContextCollector()
+            val collector = CodeCollector()
             val contexts = collector.collectFromFiles(files.toList(), project)
             val output = collector.formatContexts(contexts)
             val totalLines = contexts.sumOf { it.content.lines().size }
