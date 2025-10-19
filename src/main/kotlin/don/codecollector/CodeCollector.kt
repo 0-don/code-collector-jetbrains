@@ -91,6 +91,32 @@ class CodeCollector {
         return files
     }
 
+    private fun collectFilesFromDirectoryDirect(
+        directory: VirtualFile,
+    ): List<VirtualFile> {
+        val files = mutableListOf<VirtualFile>()
+        val queue = ArrayDeque<VirtualFile>()
+        queue.add(directory)
+
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+
+            try {
+                current.children?.forEach { file ->
+                    if (file.isDirectory) {
+                        queue.add(file)
+                    } else if (isValidFile(file)) {
+                        files.add(file)
+                    }
+                }
+            } catch (_: Exception) {
+                // Skip inaccessible directories
+            }
+        }
+
+        return files
+    }
+
     private fun isJavaKotlin(
         file: VirtualFile,
         project: Project,
@@ -148,21 +174,16 @@ class CodeCollector {
 
         files.forEach { file ->
             if (file.isDirectory) {
-                // Collect all files from directory without import analysis
-                collectFilesFromDirectory(file, project)
+                // Collect all files from directory without import analysis or ignore filtering
+                collectFilesFromDirectoryDirect(file)
                     .forEach { dirFile ->
-                        if (processed.add(dirFile.path) && isValidFile(dirFile) &&
-                            !shouldIgnore(
-                                dirFile,
-                                project,
-                            )
-                        ) {
+                        if (processed.add(dirFile.path)) {
                             addSimpleFileContext(dirFile, project, contexts)
                         }
                     }
             } else {
-                // Add individual file without import analysis
-                if (processed.add(file.path) && isValidFile(file) && !shouldIgnore(file, project)) {
+                // Add individual file without import analysis or ignore filtering
+                if (processed.add(file.path) && isValidFile(file)) {
                     addSimpleFileContext(file, project, contexts)
                 }
             }
