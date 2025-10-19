@@ -294,7 +294,9 @@ class ContextCollector {
                 val fileNamePath = Paths.get(fileName)
 
                 // Test against both full path and filename
-                matcher.matches(fullPath) || matcher.matches(fileNamePath)
+                matcher.matches(fullPath) || matcher.matches(fileNamePath) ||
+                        // Simple contains check for directory names
+                        relativePath.contains(pattern)
             } catch (_: Exception) {
                 false
             }
