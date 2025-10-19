@@ -55,6 +55,7 @@ class CodeCollectorSettings : PersistentStateComponent<CodeCollectorSettings.Sta
                 "mvnw.cmd",
                 // IDE files
                 ".idea/**",
+                ".run/**",
                 "*.iml",
                 "*.iws",
                 "*.ipr",

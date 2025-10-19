@@ -100,10 +100,29 @@ class CodeCollector {
                 file.exists() &&
                 isOfficialSourceFile(file, project)
 
+    private fun isTextFile(file: VirtualFile): Boolean {
+        return try {
+            // Read first few bytes to check if it's text
+            val bytes = file.contentsToByteArray().take(1024).toByteArray()
+
+            // Check for null bytes (strong indicator of binary)
+            if (bytes.contains(0)) return false
+
+            // Try to decode as UTF-8
+            val text = String(bytes, Charsets.UTF_8)
+
+            // Check if decoding was successful (no replacement characters)
+            !text.contains('\uFFFD')
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun isValidFile(file: VirtualFile): Boolean =
         file.isValid &&
                 file.exists() &&
-                !file.isDirectory
+                !file.isDirectory &&
+                isTextFile(file)
 
     fun collectAllFiles(project: Project): List<FileContext> {
         val contexts = mutableListOf<FileContext>()
