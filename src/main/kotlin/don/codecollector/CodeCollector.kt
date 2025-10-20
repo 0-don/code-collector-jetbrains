@@ -11,8 +11,9 @@ import com.intellij.psi.PsiManager
 import don.codecollector.parsers.JavaKotlinParser
 import don.codecollector.resolvers.JvmResolver
 import don.codecollector.settings.CodeCollectorSettings
-import java.nio.file.FileSystems
-import java.nio.file.Paths
+import org.eclipse.jgit.ignore.IgnoreNode
+import org.eclipse.jgit.ignore.IgnoreNode.MatchResult
+import java.io.ByteArrayInputStream
 
 data class FileContext(
     val path: String,
@@ -27,6 +28,8 @@ enum class CollectionMode {
 }
 
 class CodeCollector {
+    private var ignoreNode: IgnoreNode? = null
+    private var lastPatternsHash: Int = 0
     private val parser = JavaKotlinParser()
     private val resolver = JvmResolver()
 
@@ -321,22 +324,27 @@ class CodeCollector {
         }
     }
 
+    private fun getIgnoreNode(patterns: List<String>): IgnoreNode {
+        val patternsHash = patterns.hashCode()
+        if (ignoreNode == null || lastPatternsHash != patternsHash) {
+            ignoreNode = IgnoreNode().apply {
+                val patternsText = patterns.joinToString("\n")
+                parse(ByteArrayInputStream(patternsText.toByteArray()))
+            }
+            lastPatternsHash = patternsHash
+        }
+        return ignoreNode!!
+    }
+
     private fun shouldIgnore(file: VirtualFile, project: Project): Boolean {
         val settings = CodeCollectorSettings.getInstance(project)
         val enabledPatterns = settings.getEnabledPatterns()
         val relativePath = FileUtil.toSystemIndependentName(getRelativePath(file, project))
-        val fileName = file.name
 
-        return enabledPatterns.any { pattern ->
-            try {
-                val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                val fullPath = Paths.get(relativePath)
-                val fileNamePath = Paths.get(fileName)
-                matcher.matches(fullPath) || matcher.matches(fileNamePath) || relativePath.contains(pattern)
-            } catch (_: Exception) {
-                false
-            }
-        }
+        if (enabledPatterns.isEmpty()) return false
+
+        val ignoreNode = getIgnoreNode(enabledPatterns)
+        return ignoreNode.isIgnored(relativePath, file.isDirectory) == MatchResult.IGNORED
     }
 
     private fun getRelativePath(file: VirtualFile, project: Project): String {

@@ -18,7 +18,7 @@ if (envFile.exists()) {
 }
 
 group = "don.codecollector"
-version = "1.0.21"
+version = "1.0.22"
 
 repositories {
     mavenCentral()
@@ -28,6 +28,12 @@ repositories {
 }
 
 dependencies {
+    implementation("org.eclipse.jgit:org.eclipse.jgit:7.4.0.202509020913-r") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.slf4j", module = "slf4j-simple")
+        exclude(group = "org.slf4j", module = "slf4j-log4j12")
+    }
+
     intellijPlatform {
         create("IC", "2025.1")
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
