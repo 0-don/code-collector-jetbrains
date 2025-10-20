@@ -18,7 +18,7 @@ if (envFile.exists()) {
 }
 
 group = "don.codecollector"
-version = "1.0.22"
+version = "1.0.23"
 
 repositories {
     mavenCentral()
