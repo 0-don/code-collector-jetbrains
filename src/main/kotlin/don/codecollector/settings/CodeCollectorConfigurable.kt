@@ -93,9 +93,11 @@ class CodeCollectorConfigurable(
     }
 
     private fun setupDragAndDrop() {
-        checkboxTree.dragEnabled = true
-        checkboxTree.dropMode = DropMode.INSERT
-        checkboxTree.transferHandler = PatternTransferHandler()
+        if (!java.awt.GraphicsEnvironment.isHeadless()) {
+            checkboxTree.dragEnabled = true
+            checkboxTree.dropMode = DropMode.INSERT
+            checkboxTree.transferHandler = PatternTransferHandler()
+        }
     }
 
     private fun setupDoubleClickEdit() {
