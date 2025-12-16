@@ -18,7 +18,7 @@ if (envFile.exists()) {
 }
 
 group = "don.codecollector"
-version = "1.0.23"
+version = "1.0.24"
 
 repositories {
     mavenCentral()
@@ -47,7 +47,6 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "251"
-            untilBuild = "252.*"
         }
     }
 
